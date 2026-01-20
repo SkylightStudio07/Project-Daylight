@@ -4,6 +4,8 @@
 #include "DaylightCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/CapsuleComponent.h"
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 ADaylightCharacter::ADaylightCharacter()
@@ -18,7 +20,7 @@ void ADaylightCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentHealth = MaxHealth;
+    CurrentHealth = MaxHealth;
 	
 }
 
@@ -68,58 +70,111 @@ void ADaylightCharacter::LookRightRate(float AxisValue)
 	AddControllerYawInput(AxisValue * RotationRate * GetWorld()->GetDeltaSeconds());
 }
 
-bool ADaylightCharacter::IsDead() const
+float ADaylightCharacter::TakeDamage(float DamageAmount,
+    FDamageEvent const& DamageEvent,
+    AController* EventInstigator,
+    AActor* DamageCauser)
 {
-	return CurrentHealth <= 0.0f;
+    // 이미 죽었으면 무시
+    if (IsDead()) return 0.f;
+
+    // 부모 클래스 호출
+    float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+    // 체력 감소
+    CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.f, MaxHealth);
+
+    // 로그
+    UE_LOG(LogTemp, Warning, TEXT("%s took %.1f damage, Health: %.1f/%.1f"),
+        *GetName(), ActualDamage, CurrentHealth, MaxHealth);
+
+    // 죽음 체크
+    if (IsDead())
+    {
+        OnDeath();
+    }
+
+    return ActualDamage;
 }
 
-bool ADaylightCharacter::PerformHitscan(float Range, FHitResult& OutHit)
+FHitResult ADaylightCharacter::PerformWeaponTrace(float Range)
 {
-	FVector CameraLocation;
-	FRotator CameraRotation;
-	// Get the player's viewpoint
-	GetActorEyesViewPoint(CameraLocation, CameraRotation);
+    FHitResult OutHit;
 
-	// Calculate the end location of the trace
-	FVector TraceStart = CameraLocation;
-	FVector TraceEnd = TraceStart + (CameraRotation.Vector() * Range);
+    // 카메라 위치
+    FVector CameraLoc;
+    FRotator CameraRot;
+    GetActorEyesViewPoint(CameraLoc, CameraRot);
 
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-	// Perform the line trace (raycast)
-	QueryParams.bTraceComplex = true;
+    FVector Start = CameraLoc;
+    FVector End = Start + (CameraRot.Vector() * Range);
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
+    // 충돌 설정
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    Params.bTraceComplex = true;
 
-	#if WITH_EDITOR
-    if (bHit)
+    // Trace 실행
+    GetWorld()->LineTraceSingleByChannel(
+        OutHit,
+        Start,
+        End,
+        ECC_Visibility,
+        Params
+    );
+
+    // 디버그 (개발 중)
+#if WITH_EDITOR
+    FColor DebugColor = OutHit.bBlockingHit ? FColor::Red : FColor::Green;
+    FVector DebugEnd = OutHit.bBlockingHit ? OutHit.Location : End;
+    DrawDebugLine(GetWorld(), Start, DebugEnd, DebugColor, false, 2.f, 0, 2.f);
+
+    if (OutHit.bBlockingHit)
     {
-        DrawDebugLine(GetWorld(), TraceStart, OutHit.Location, FColor::Red, false, 2.f, 0, 2.f);
         DrawDebugPoint(GetWorld(), OutHit.Location, 10.f, FColor::Red, false, 2.f);
     }
-    else
-    {
-        DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 2.f, 0, 2.f);
-    }
-    #endif
-    
-    return bHit;
+#endif
+
+    return OutHit;
 }
 
-void ADaylightCharacter::ApplyWeaponDamage(AActor* HitActor, const FHitResult& HitResult)
+void ADaylightCharacter::ProcessWeaponHit(const FHitResult& HitResult)
 {
-	if (!HitActor) return;
+    if (!HitResult.bBlockingHit) return;
 
-	// 데미지 적용
-	UGameplayStatics::ApplyPointDamage(
-		HitActor,
-		WeaponDamage,
-		HitResult.TraceStart,
-		HitResult,
-		GetController(),
-		this,
-		UDamageType::StaticClass()
-	);
+    AActor* HitActor = HitResult.GetActor();
+    if (!HitActor) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("Hit: %s for %.1f damage"), *HitActor->GetName(), WeaponDamage);
+    // 데미지 적용
+    UGameplayStatics::ApplyPointDamage(
+        HitActor,
+        BaseDamage,
+        HitResult.TraceStart,
+        HitResult,
+        GetController(),
+        this,
+        UDamageType::StaticClass()
+    );
+
+    UE_LOG(LogTemp, Warning, TEXT("Hit: %s at %s"),
+        *HitActor->GetName(),
+        *HitResult.ImpactPoint.ToString());
+}
+
+void ADaylightCharacter::ApplyDamage(float Damage)
+{
+    // 간단한 래퍼 함수
+    TakeDamage(Damage, FDamageEvent(), nullptr, nullptr);
+}
+
+void ADaylightCharacter::OnDeath_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("%s died!"), *GetName());
+
+    // 죽음 처리 (BP에서 오버라이드 가능)
+    // 예: Ragdoll, 애니메이션, 디스폰 등
+
+    // 임시: 캐릭터 비활성화
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetMesh()->SetSimulatePhysics(true);
 }

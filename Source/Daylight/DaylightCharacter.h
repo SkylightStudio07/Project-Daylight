@@ -26,17 +26,31 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	UFUNCTION(BlueprintPure)
-	bool IsDead() const;
+	virtual float TakeDamage(float DamageAmount,
+		FDamageEvent const& DamageEvent,
+		AController* EventInstigator,
+		AActor* DamageCauser) override;
+
+	// BP에서 호출 가능한 함수들
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void ApplyDamage(float Damage);
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	bool IsDead() const { return CurrentHealth <= 0.f; }
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	float GetHealthPercent() const { return CurrentHealth / MaxHealth; }
+
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	bool PerformHitscan(float Range, FHitResult& OutHit);
+	FHitResult PerformWeaponTrace(float Range = 10000.f);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void ApplyWeaponDamage(AActor* HitActor, const FHitResult& HitResult);
+	void ProcessWeaponHit(const FHitResult& HitResult);
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	float WeaponDamage = 20.f;
+	float BaseDamage = 20.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float WeaponRange = 10000.f;
@@ -56,7 +70,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	float CurrentHealth;
-
+protected:
+	UFUNCTION(BlueprintNativeEvent, Category = "Health")
+	void OnDeath();
+	virtual void OnDeath_Implementation();
 
 
 };
