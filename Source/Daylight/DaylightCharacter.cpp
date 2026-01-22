@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "GameHUD.h"
 #include "Engine/DamageEvents.h"
 
 // Sets default values
@@ -21,6 +22,25 @@ void ADaylightCharacter::BeginPlay()
 	Super::BeginPlay();
 
     CurrentHealth = MaxHealth;
+
+    CurrentHealth = MaxHealth;
+
+    // HUD 생성 (로컬 플레이어만)
+    if (IsLocallyControlled())
+    {
+        if (HUDWidgetClass)
+        {
+            APlayerController* PC = Cast<APlayerController>(GetController());
+            if (PC)
+            {
+                HUDWidget = CreateWidget<UGameHUD>(PC, HUDWidgetClass);
+                if (HUDWidget)
+                {
+                    HUDWidget->AddToViewport();
+                }
+            }
+        }
+    }
 	
 }
 

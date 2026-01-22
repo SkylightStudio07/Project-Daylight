@@ -55,6 +55,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float WeaponRange = 10000.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float MaxHealth = 100.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+	float CurrentHealth;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<class UGameHUD> HUDWidgetClass;
+
 private:
 	
 	void MoveForward(float AxisValue);
@@ -65,11 +74,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RotationRate = 20.0f;
 
-	UPROPERTY(EditAnywhere)
-	float MaxHealth = 100.0f;
+	UPROPERTY()
+	class UGameHUD* HUDWidget;
 
-	UPROPERTY(VisibleAnywhere)
-	float CurrentHealth;
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Health")
 	void OnDeath();
