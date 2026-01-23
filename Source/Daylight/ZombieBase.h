@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "DaylightCharacter.h"
+#include "AIController.h"
 #include "ZombieBase.generated.h"
 
 /**
@@ -18,7 +19,8 @@ protected:
 
 public:
 	AZombieBase();
-    virtual void Tick(float DeltaTime) override;
+    UPROPERTY(EditDefaultsOnly, Category = "AI")
+    TSubclassOf<AAIController> ZombieAIControllerClass;
 
     // AI 상태
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
@@ -43,13 +45,14 @@ protected:
     // 공격 타이머
     float LastAttackTime;
 
+    /*
     // AI 로직
     void UpdateAI();
     AActor* FindNearestTarget();
     void MoveToTarget();
     void AttackTarget();
     bool CanAttack() const;
-
+    */
     // 죽음 처리
     virtual void OnDeath_Implementation() override;
 };

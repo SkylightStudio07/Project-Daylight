@@ -5,20 +5,17 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "ZombieAIController.h"
 #include "WaveManager.h"
 #include "DrawDebugHelpers.h"
 
 AZombieBase::AZombieBase()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
     // 좀비 설정
 
-    LastAttackTime = -999.f;
-
-    // 이동 속도
-    GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-
-    // AI Controller 자동 빙의
+    // AI Controller 설정
+    ZombieAIControllerClass = AZombieAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -27,12 +24,7 @@ void AZombieBase::BeginPlay()
 	Super::BeginPlay();
 	
 }
-
-void AZombieBase::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-    UpdateAI();
-}
+/*
 
 void AZombieBase::UpdateAI()
 {
@@ -128,7 +120,7 @@ bool AZombieBase::CanAttack() const
     float TimeSinceLastAttack = GetWorld()->GetTimeSeconds() - LastAttackTime;
     return TimeSinceLastAttack >= AttackCooldown;
 }
-
+*/
 void AZombieBase::OnDeath_Implementation()
 {
     Super::OnDeath_Implementation();
@@ -164,4 +156,5 @@ void AZombieBase::OnDeath_Implementation()
                 Destroy();
             }, 3.0f, false);
     }
+    
 }
