@@ -64,6 +64,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<class UGameHUD> HUDWidgetClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	float InteractionRange = 200.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Interaction")
+	AActor* FocusedInteractable;
+
+	void UpdateInteractionTrace();
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void TryInteract();
+
 private:
 	
 	void MoveForward(float AxisValue);

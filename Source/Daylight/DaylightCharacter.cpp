@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "Interactable.h"
 #include "GameHUD.h"
 #include "Engine/DamageEvents.h"
 
@@ -47,8 +48,9 @@ void ADaylightCharacter::BeginPlay()
 // Called every frame
 void ADaylightCharacter::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
 
+    UpdateInteractionTrace();
 }
 
 // Called to bind functionality to input
@@ -62,6 +64,7 @@ void ADaylightCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis(TEXT("LookRight"), this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis(TEXT("LookUpRate"), this, &ADaylightCharacter::LookUpRate);
 	PlayerInputComponent->BindAxis(TEXT("LookRightRate"), this, &ADaylightCharacter::LookRightRate);
+    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ADaylightCharacter::TryInteract);
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 
 }
@@ -197,4 +200,48 @@ void ADaylightCharacter::OnDeath_Implementation()
     // 임시: 캐릭터 비활성화
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetSimulatePhysics(true);
+}
+
+
+
+void ADaylightCharacter::UpdateInteractionTrace()
+{
+    FVector CameraLoc;
+    FRotator CameraRot;
+    GetActorEyesViewPoint(CameraLoc, CameraRot);
+
+    FVector Start = CameraLoc;
+    FVector End = Start + (CameraRot.Vector() * InteractionRange);
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+    {
+        AActor* HitActor = Hit.GetActor();
+
+        if (HitActor && HitActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+        {
+            FocusedInteractable = HitActor;
+
+            // UI에 힌트 표시
+            // "E - Hack Door"
+
+            return;
+        }
+    }
+
+    FocusedInteractable = nullptr;
+}
+
+void ADaylightCharacter::TryInteract()
+{
+    if (!FocusedInteractable)
+        return;
+
+    if (FocusedInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+    {
+        IInteractable::Execute_Interact(FocusedInteractable, this);
+    }
 }
