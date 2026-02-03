@@ -145,7 +145,7 @@ FHitResult ADaylightCharacter::PerformWeaponTrace(float Range)
         ECC_Visibility,
         Params
     );
-
+    /*
     // 디버그 (개발 중)
 #if WITH_EDITOR
     FColor DebugColor = OutHit.bBlockingHit ? FColor::Red : FColor::Green;
@@ -157,6 +157,7 @@ FHitResult ADaylightCharacter::PerformWeaponTrace(float Range)
         DrawDebugPoint(GetWorld(), OutHit.Location, 10.f, FColor::Red, false, 2.f);
     }
 #endif
+*/
 
     return OutHit;
 }
