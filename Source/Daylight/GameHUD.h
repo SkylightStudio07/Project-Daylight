@@ -37,6 +37,13 @@ public:
     UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
     class UImage* Crosshair;
 
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    class UTextBlock* InteractionPrompt;
+
+    UFUNCTION(BlueprintCallable, Category = "HUD")
+    void UpdateInteractionPrompt(const FString& PromptText);
+
+
     // 업데이트 함수
     UFUNCTION(BlueprintCallable, Category = "HUD")
     void UpdateHealth(float Current, float Max);

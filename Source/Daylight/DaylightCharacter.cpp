@@ -217,18 +217,25 @@ void ADaylightCharacter::UpdateInteractionTrace()
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(this);
 
+    // 디버그 라인 그리기
+    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.1f, 0, 1.f);
+
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
     {
         AActor* HitActor = Hit.GetActor();
 
+        // 로그 추가
+        UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s"), HitActor ? *HitActor->GetName() : TEXT("NULL"));
+
         if (HitActor && HitActor->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
         {
             FocusedInteractable = HitActor;
-
-            // UI에 힌트 표시
-            // "E - Hack Door"
-
+            UE_LOG(LogTemp, Warning, TEXT("Found Interactable: %s"), *HitActor->GetName());
             return;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Log, TEXT("Actor does NOT implement IInteractable"));
         }
     }
 
@@ -237,11 +244,42 @@ void ADaylightCharacter::UpdateInteractionTrace()
 
 void ADaylightCharacter::TryInteract()
 {
+    UE_LOG(LogTemp, Error, TEXT("=== E KEY PRESSED! ==="));
+
     if (!FocusedInteractable)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No FocusedInteractable"));
         return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("FocusedInteractable: %s"), *FocusedInteractable->GetName());
 
     if (FocusedInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
     {
-        IInteractable::Execute_Interact(FocusedInteractable, this);
+        bool bCanInteract = IInteractable::Execute_CanInteract(FocusedInteractable, this);
+
+        UE_LOG(LogTemp, Warning, TEXT("CanInteract: %s"), bCanInteract ? TEXT("TRUE") : TEXT("FALSE"));
+
+        if (bCanInteract)
+        {
+            IInteractable::Execute_Interact(FocusedInteractable, this);
+        }
     }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Does NOT implement IInteractable!"));
+    }
+}
+
+FString ADaylightCharacter::GetInteractionPrompt() const
+{
+    if (!FocusedInteractable)
+        return TEXT("");
+
+    if (FocusedInteractable->GetClass()->ImplementsInterface(UInteractable::StaticClass()))
+    {
+        return IInteractable::Execute_GetInteractionPrompt(FocusedInteractable);
+    }
+
+    return TEXT("");
 }

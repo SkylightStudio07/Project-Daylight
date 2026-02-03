@@ -68,12 +68,15 @@ public:
 	float InteractionRange = 200.f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Interaction")
-	AActor* FocusedInteractable;
+	AActor* FocusedInteractable = nullptr;
 
 	void UpdateInteractionTrace();
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void TryInteract();
+
+	UFUNCTION(BlueprintPure, Category = "Interaction")
+	FString GetInteractionPrompt() const;
 
 private:
 	

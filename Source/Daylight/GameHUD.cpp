@@ -96,3 +96,20 @@ void UGameHUD::UpdateWave(int32 WaveNumber, int32 ZombiesRemaining)
         ZombiesRemainingText->SetText(FText::FromString(ZombiesString));
     }
 }
+
+void UGameHUD::UpdateInteractionPrompt(const FString& PromptText)
+{
+    if (!InteractionPrompt)
+        return;
+
+    if (PromptText.IsEmpty())
+    {
+        InteractionPrompt->SetVisibility(ESlateVisibility::Hidden);
+    }
+    else
+    {
+        InteractionPrompt->SetText(FText::FromString(PromptText));
+        InteractionPrompt->SetVisibility(ESlateVisibility::Visible);
+    }
+}
+

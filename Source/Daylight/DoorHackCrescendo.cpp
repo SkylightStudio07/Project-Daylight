@@ -12,18 +12,23 @@ ADoorHackCrescendo::ADoorHackCrescendo()
 {
     PrimaryActorTick.bCanEverTick = false;
 
-    // Root
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-    // 터미널 메시 (해킹할 컴퓨터/패널)
     TerminalMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TerminalMesh"));
     TerminalMesh->SetupAttachment(RootComponent);
 
-    // 상호작용 영역
-    InteractionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionBox"));
-    InteractionBox->SetupAttachment(RootComponent);
-    InteractionBox->SetBoxExtent(FVector(100.f, 100.f, 100.f));
+    // 콜리전 설정 중요!
+    TerminalMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    TerminalMesh->SetCollisionResponseToAllChannels(ECR_Block);
+    TerminalMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);  // 중요!
+
+    // 메시 설정
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube"));
+    if (CubeMesh.Succeeded())
+    {
+        TerminalMesh->SetStaticMesh(CubeMesh.Object);
+    }
 }
 
 void ADoorHackCrescendo::BeginPlay()
@@ -183,11 +188,14 @@ void ADoorHackCrescendo::OnZombieKilled()
 // IInteractable 인터페이스 구현
 bool ADoorHackCrescendo::CanInteract_Implementation(AActor* InteractInstigator) const
 {
-    return !bIsHacking && !bIsCompleted;
+    bool bCan = !bIsHacking && !bIsCompleted;
+    UE_LOG(LogTemp, Warning, TEXT("CanInteract called: %s"), bCan ? TEXT("TRUE") : TEXT("FALSE"));
+    return bCan;
 }
 
 void ADoorHackCrescendo::Interact_Implementation(AActor* InteractInstigator)
 {
+    UE_LOG(LogTemp, Error, TEXT("=== INTERACT CALLED! ==="));
     StartHack(InteractInstigator);
 }
 
